@@ -55,6 +55,28 @@ ACTIVATION_RESPONSE = json.dumps({
 }).encode()
 
 
+# ─── 通信テストサーバー ──────────────────────────────────────────────────────
+
+TEST_PORT = 8080
+
+class TestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = b"[success]"
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        print(f"[TEST] アクセスあり: {self.address_string()}")
+
+    def log_message(self, *args): pass
+
+
+def run_test_server():
+    server = HTTPServer(("0.0.0.0", TEST_PORT), TestHandler)
+    server.serve_forever()
+
+
 # ─── 内部APIサーバー ────────────────────────────────────────────────────────
 
 class ActivationHandler(BaseHTTPRequestHandler):
@@ -192,6 +214,7 @@ if __name__ == "__main__":
         local_ip = "不明"
 
     threading.Thread(target=run_api_server, daemon=True).start()
+    threading.Thread(target=run_test_server, daemon=True).start()
 
     print("=" * 50)
     print("PowerVision S1 アクティベーションプロキシ")
@@ -200,6 +223,7 @@ if __name__ == "__main__":
     print(f"  ホスト: {local_ip}")
     print(f"  ポート: {PROXY_PORT}")
     print(f"ルーティング: {TARGET_HOST} -> 内蔵APIサーバー")
+    print(f"通信テスト: http://{local_ip}:{TEST_PORT}")
     print("Ctrl+C で停止")
     print("=" * 50)
 
